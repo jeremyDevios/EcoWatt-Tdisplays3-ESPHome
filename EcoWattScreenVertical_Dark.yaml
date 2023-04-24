@@ -1,0 +1,301 @@
+esphome:
+  name: lilygoscreens3
+  #platformio_options:
+  #  board_build.mcu: esp32s3
+  #  board_build.name: "LilyGO T-Embed ESP32-S3"
+  #  board_build.upload.flash_size: "16MB"
+  #  board_build.upload.maximum_size: 16777216
+  #  board_build.vendor: "LilyGO"
+  platformio_options:
+    board_upload.flash_size: 16MB
+    board_upload.maximum_ram_size: 327680
+    board_upload.maximum_size: 16777216
+    board_build.partitions: "../../../custom_partitions.csv"
+    
+external_components:
+  - source: github://landonr/lilygo-tdisplays3-esphome
+    components: [tdisplays3]
+
+esp32:
+  board: esp32-s3-devkitc-1
+  variant: esp32s3
+  framework:
+    type: arduino
+
+
+#esp32:
+#  board: esp32-s3-devkitc-1
+#  variant: esp32s3
+  #framework:
+  #  type: arduino
+  #  version: 2.0.3
+  #  platform_version: 5.0.0
+    
+# Enable logging
+logger:
+  level: INFO
+
+# Enable Home Assistant API
+#api:
+
+#ota:
+#  password: "6ada29f6f41ce1685d29d406efd25fa4"
+  
+api:
+  encryption:
+    key: "ylBsQ2GLtmw8UInDd3umS7LuiCuPF1c1ng8jG14Qzy0="
+
+ota:
+  password: "ec3b42291a5141421db188ef86cbf4f7"
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "S3ScreenHotSpot"
+    password: "Passworddd"
+
+time:
+  - platform: homeassistant
+    id: ha_time
+
+
+animation:
+#  - file: "gif/emoji_19.gif"
+#    id: waiting
+#    resize: 100x100
+#    type: RGB565
+  - file: "gif_dark/hot.gif"
+    id: hot
+    resize: 100x100
+    type: RGB565
+  - file: "gif_dark/very_hot.gif"
+    id: very_hot
+    resize: 100x100
+    type: RGB565
+#  - file: "gif/emoji_27.gif"
+#    id: angry
+#    resize: 100x100
+#    type: RGB565
+  - file: "gif_dark/weary.gif"
+    id: start_hot
+    resize: 100x100
+    type: RGB565
+  - file: "gif_dark/money.gif"
+    id: money
+    resize: 100x100
+    type: RGB565
+  - file: "gif_dark/sunglass.gif"
+    id: sunglass
+    resize: 100x100
+    type: RGB565
+  - file: "gif_dark/happy.gif"
+    id: happy
+    resize: 100x100
+    type: RGB565
+#  - file: "gif/emoji_13.gif"
+#    id: smilling
+#    resize: 100x100
+#    type: RGB565
+#  - file: "gif/emoji_18.gif"
+#    id: shy
+#    resize: 100x100
+#    type: RGB565
+  - file: "gif_dark/relieved.gif"
+    id: neutral
+    resize: 100x100
+    type: RGB565
+  - file: "gif_dark/solar-panel.png"
+    id: solar_panel
+    type: RGB24
+  - file: "gif_dark/cloud-mining.png"
+    id: bitcoin
+    type: RGB24
+  - file: "gif_dark/tower.png"
+    id: electric_tower
+    type: RGB24
+    
+sensor:
+  - platform: homeassistant
+    name: "Shelly channel 1 power"
+    id: consumption_power
+    entity_id: sensor.shelly_channel_1_power
+
+  - platform: homeassistant
+    name: "Puissance Sunology"
+    id: sun_power
+    entity_id: sensor.shelly_channel_2_power
+    
+  - platform: homeassistant
+    name: "Mining Monitor Power"
+    id: mining_power
+    entity_id: sensor.mining_monitor_power
+
+
+binary_sensor:
+  - platform: gpio
+    pin:
+      number: GPIO0
+      inverted: true
+      mode:
+        input: true
+        pullup: true
+    name: "short press button0"
+    id: tdisplay_button_0
+    on_click:
+      min_length: 1ms
+      max_length: 1000ms
+      then:
+        - display.page.show_previous: disp
+        - component.update: disp
+
+font:
+  - file:
+      type: gfonts
+      family: Nunito Sans
+      weight: 600
+    id: nunito_25
+    size: 25
+  - file:
+      type: gfonts
+      family: Nunito Sans
+      weight: 600
+    id: nunito_12
+    size: 12
+  - file:
+      type: gfonts
+      family: Nunito Sans
+      weight: 600
+    id: nunito_10
+    size: 10
+
+color:
+  - id: RED
+    red: 100%
+    green: 33%
+    blue: 33%
+  - id: RED2
+    red: 95%
+    green: 34%
+    blue: 0%
+  - id: BLUE
+    red: 0%
+    green: 0%
+    blue: 100%
+  - id: WHITE
+    red: 100%
+    green: 100%
+    blue: 100%
+  - id: GREEN
+    red: 35%
+    green: 100%
+    blue: 64%
+  - id: BLACK
+    red: 0%
+    green: 0%
+    blue: 0%
+
+display:
+  - platform: tdisplays3
+    id: disp
+    #update_interval: 1s
+    update_interval: 0.001s
+    rotation: 0
+    pages:
+      - id: energy_dashboard
+        lambda: |-
+          if (id(consumption_power).has_state()) {
+            it.print(53,  22, id(nunito_12), WHITE, TextAlign::LEFT, "PUISSANCE");
+            it.print(57,  34, id(nunito_12), WHITE, TextAlign::LEFT, "ACTUELLE");
+            it.print(53,  105, id(nunito_12), WHITE, TextAlign::LEFT, "PUISSANCE");
+            it.print(62,  117, id(nunito_12), WHITE, TextAlign::LEFT, "SOLAIRE");
+            
+            float cons = id(consumption_power).state;
+            
+            if (id(mining_power).has_state()) {
+              float mining = id(mining_power).state;
+              if (mining > 15.0) {
+                it.image(140, 285, id(bitcoin));
+              }
+            }
+            
+            if (cons < 0.0) {
+              if (id(mining_power).has_state()) {
+                float mining = id(mining_power).state;
+                if (mining > 15.0) {
+                  it.image(35, 193, id(money), COLOR_ON, COLOR_OFF);
+                  id(money).next_frame();
+                }
+                else {
+                  if (cons < -600.0) {
+                    it.image(35, 193, id(sunglass), COLOR_ON, COLOR_OFF);
+                    id(sunglass).next_frame();
+                  }
+                  else {
+                    it.image(35, 193, id(happy), COLOR_ON, COLOR_OFF);
+                    id(happy).next_frame();
+                  }
+                }
+              }
+              else {
+                it.image(35, 193, id(sunglass), COLOR_ON, COLOR_OFF);
+                 id(sunglass).next_frame();
+              }
+              it.printf(42,  51, id(nunito_25), GREEN, "%.0f W", id(consumption_power).state);
+            }
+            else {
+              if (cons < 200.0) {
+                it.image(35, 193, id(neutral), COLOR_ON, COLOR_OFF);
+                id(neutral).next_frame();
+                it.printf(42,  51, id(nunito_25), RED2, "%.0f W", id(consumption_power).state);
+              }
+              else {
+                it.printf(42,  51, id(nunito_25), RED, "%.0f W", id(consumption_power).state);
+                if (cons < 1000.0) {
+                  it.image(35, 193, id(start_hot), COLOR_ON, COLOR_OFF);
+                  id(start_hot).next_frame();
+                }
+                else {
+                  if (cons < 1900.0) {
+                    it.image(35, 193, id(hot), COLOR_ON, COLOR_OFF);
+                    id(hot).next_frame();
+                  }
+                  else {
+                    it.image(35, 193, id(very_hot), COLOR_ON, COLOR_OFF);
+                    id(very_hot).next_frame();
+                  }
+                }
+              }
+            }
+            
+            float sunpower = id(sun_power).state;
+            if (sunpower > 4.0) {
+                if (sunpower > 600.0) {
+                  it.printf(42,  134, id(nunito_25), GREEN, "%.1f W", id(sun_power).state);
+                }
+                else {
+                  it.printf(42,  134, id(nunito_25), WHITE, "%.1f W", id(sun_power).state);
+                }
+                it.image(5, 285, id(solar_panel));
+            }
+            else {
+              it.printf(42,  134, id(nunito_25), RED2, "%.1f W", id(sun_power).state);
+              it.image(5, 285, id(electric_tower));
+            }
+          }
+          else {
+            it.print(22,  134, id(nunito_25), WHITE, TextAlign::LEFT, "WAITING...");
+          }
+      - id: other_dashboard
+        lambda: |-
+          it.print(53,  22, id(nunito_12), WHITE, TextAlign::LEFT, "PUISSANCE");
+
+
+
+state_attr('weather.your_weather', 'temperature') | round(0, default=-99)
+
+ { "text": "{{states.sensor.xbt_usd_ask.state}} $", "icon": "52787",  "color": "F2A900"}
+ 
+ { "text": "{{state_attr('weather.forecast_maison', 'temperature') | round(0, default=-99)}} $", "icon": "52787",  "color": "F2A900"}
