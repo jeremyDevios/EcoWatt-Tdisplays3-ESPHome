@@ -117,6 +117,16 @@ sensor:
     name: "Sunology Power"
     id: sun_power
     entity_id: sensor.shelly_sunpower_channel_1_power
+
+  - platform: homeassistant
+    name: "Puissance Pompe Chaleur"
+    id: heat_pump_power
+    entity_id: sensor.shelly_channel_2_power
+  
+  - platform: homeassistant
+    name: "Pompe Piscine Power"
+    id: swimming_pool_pump_power
+    entity_id: sensor.pompe_piscine_power
     
   - platform: homeassistant
     name: "Mining Monitor Power"
@@ -127,6 +137,16 @@ sensor:
     name: "Energy_cost"
     id: cost
     entity_id: input_number.energy_cost
+
+  - platform: homeassistant
+    name: "Beam Solar Power"
+    id: beam_power
+    entity_id: sensor.smart_switch_23052956369568510d0748e1e9c82cd3_power
+
+  - platform: homeassistant
+    name: "Total Solar Power"
+    id: total_sun_power
+    entity_id: sensor.solar_panels
     
 
 binary_sensor:
@@ -172,6 +192,12 @@ font:
       type: gfonts
       family: Nunito Sans
       weight: 600
+    id: nunito_15
+    size: 15
+  - file:
+      type: gfonts
+      family: Nunito Sans
+      weight: 600
     id: nunito_12
     size: 12
   - file:
@@ -180,6 +206,18 @@ font:
       weight: 600
     id: nunito_10
     size: 10
+  - file:
+      type: gfonts
+      family: Nunito Sans
+      weight: 600
+    id: nunito_8
+    size: 8
+  - file:
+      type: gfonts
+      family: Nunito Sans
+      weight: 600
+    id: nunito_9
+    size: 9
 
 color:
   - id: RED
@@ -215,83 +253,117 @@ display:
     pages:
       - id: energy_dashboard
         lambda: |-
-          it.print(53,  22, id(nunito_12), WHITE, TextAlign::LEFT, "PUISSANCE");
-          it.print(57,  34, id(nunito_12), WHITE, TextAlign::LEFT, "ACTUELLE");
-          it.print(53,  105, id(nunito_12), WHITE, TextAlign::LEFT, "PUISSANCE");
-          it.print(62,  117, id(nunito_12), WHITE, TextAlign::LEFT, "SOLAIRE");
+          it.print(51,  7, id(nunito_12), WHITE, TextAlign::LEFT, "PUISSANCE");
+          it.print(55,  19, id(nunito_12), WHITE, TextAlign::LEFT, "ACTUELLE");
+          it.print(51,  80, id(nunito_12), WHITE, TextAlign::LEFT, "PUISSANCE");
+          it.print(60,  95, id(nunito_12), WHITE, TextAlign::LEFT, "SOLAIRE");
+          it.print(26,  148, id(nunito_8), WHITE, TextAlign::LEFT, "SUNOLOGY");
+          it.print(110,  148, id(nunito_8), WHITE, TextAlign::LEFT, "BEAM");
+
+          it.rectangle(10, 176, 50, 40, WHITE);
+          it.rectangle(60, 176, 50, 40, WHITE);
+          it.rectangle(110, 176, 50, 40, WHITE);
+
+          it.printf(18,  180, id(nunito_9), GREEN, TextAlign::LEFT, "PISCINE");
+          it.printf(74,  180, id(nunito_9), GREEN, TextAlign::LEFT, "CLIM");
+          it.printf(118,  180, id(nunito_9), GREEN, TextAlign::LEFT, "MINING");
+          
+          float heatPumpPower = id(heat_pump_power).state;
+          float swimPumpPower = id(swimming_pool_pump_power).state;
+          float miningPower = id(mining_power).state;
+
+          
+
+          if (swimPumpPower > 4.0) {
+            it.printf(21,  200, id(nunito_9), GREEN, "%.0f W", id(swimming_pool_pump_power).state);
+          }
+          else {
+            it.printf(21,  200, id(nunito_9), WHITE, "%.0f W", id(swimming_pool_pump_power).state);
+          }
+          
+          if (heatPumpPower > 4.0) {
+            it.printf(68,  200, id(nunito_9), GREEN, "%.0f W", id(heat_pump_power).state);
+          }
+          else {
+            it.printf(68,  200, id(nunito_9), WHITE, "%.0f W", id(heat_pump_power).state);
+          }
+
+          if (miningPower > 4.0) {
+            it.printf(120,  200, id(nunito_9), GREEN, "%.0f W", id(mining_power).state);
+          }
+          else {
+            it.printf(120,  200, id(nunito_9), WHITE, "%.0f W", id(mining_power).state);
+          }
+
           
           float cons = id(consumption_power).state;
           
-          if (id(mining_power).has_state()) {
-            float mining = id(mining_power).state;
-            if (mining > 15.0) {
-              it.image(140, 285, id(bitcoin));
-            }
-          }
           
           if (cons < 0.0) {
             if (id(mining_power).has_state()) {
               float mining = id(mining_power).state;
               if (mining > 15.0) {
-                it.image(35, 193, id(money), COLOR_ON, COLOR_OFF);
+                it.image(35, 218, id(money), COLOR_ON, COLOR_OFF);
                 id(money).next_frame();
               }
               else {
                 if (cons < -600.0) {
-                  it.image(35, 193, id(sunglass), COLOR_ON, COLOR_OFF);
+                  it.image(35, 218, id(sunglass), COLOR_ON, COLOR_OFF);
                   id(sunglass).next_frame();
                 }
                 else {
-                  it.image(35, 193, id(happy), COLOR_ON, COLOR_OFF);
+                  it.image(35, 218, id(happy), COLOR_ON, COLOR_OFF);
                   id(happy).next_frame();
                 }
               }
             }
             else {
-              it.image(35, 193, id(sunglass), COLOR_ON, COLOR_OFF);
+              it.image(35, 218, id(sunglass), COLOR_ON, COLOR_OFF);
                 id(sunglass).next_frame();
             }
-            it.printf(42,  51, id(nunito_25), GREEN, "%.0f W", id(consumption_power).state);
+            it.printf(42,  36, id(nunito_25), GREEN, "%.0f W", id(consumption_power).state);
           }
           else {
             if (cons < 200.0) {
-              it.image(35, 193, id(neutral), COLOR_ON, COLOR_OFF);
+              it.image(35, 218, id(neutral), COLOR_ON, COLOR_OFF);
               id(neutral).next_frame();
-              it.printf(42,  51, id(nunito_25), RED2, "%.0f W", id(consumption_power).state);
+              it.printf(42,  36, id(nunito_25), RED2, "%.0f W", id(consumption_power).state);
             }
             else {
-              it.printf(42,  51, id(nunito_25), RED, "%.0f W", id(consumption_power).state);
+              it.printf(42,  36, id(nunito_25), RED, "%.0f W", id(consumption_power).state);
               if (cons < 1000.0) {
-                it.image(35, 193, id(start_hot), COLOR_ON, COLOR_OFF);
+                it.image(35, 218, id(start_hot), COLOR_ON, COLOR_OFF);
                 id(start_hot).next_frame();
               }
               else {
                 if (cons < 1900.0) {
-                  it.image(35, 193, id(hot), COLOR_ON, COLOR_OFF);
+                  it.image(35, 218, id(hot), COLOR_ON, COLOR_OFF);
                   id(hot).next_frame();
                 }
                 else {
-                  it.image(35, 193, id(very_hot), COLOR_ON, COLOR_OFF);
+                  it.image(35, 218, id(very_hot), COLOR_ON, COLOR_OFF);
                   id(very_hot).next_frame();
                 }
               }
             }
           }
           
-          float sunpower = id(sun_power).state;
+          float sunpower = id(total_sun_power).state;
           if (sunpower > 4.0) {
               if (sunpower > 600.0) {
-                it.printf(42,  134, id(nunito_25), GREEN, "%.1f W", id(sun_power).state);
+                it.printf(36,  109, id(nunito_25), GREEN, "%.1f W", id(total_sun_power).state);
               }
               else {
-                it.printf(42,  134, id(nunito_25), WHITE, "%.1f W", id(sun_power).state);
+                it.printf(36,  109, id(nunito_25), WHITE, "%.1f W", id(total_sun_power).state);
               }
-              it.image(5, 285, id(solar_panel));
           }
           else {
-            it.printf(42,  134, id(nunito_25), RED2, "%.1f W", id(sun_power).state);
-            it.image(5, 285, id(electric_tower));
+            it.printf(36,  109, id(nunito_25), RED2, "%.1f W", id(total_sun_power).state);
           }
+
+          it.printf(25,  156, id(nunito_15), WHITE, "%.1f W", id(sun_power).state);
+          it.printf(98,  156, id(nunito_15), WHITE, "%.1f W", id(beam_power).state);
+
       - id: other_dashboard
         lambda: |-
           it.print(50,  22, id(nunito_12), WHITE, TextAlign::LEFT, "HELLO");
